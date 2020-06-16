@@ -7,11 +7,10 @@ def loadImage(image_path):
     if image is None:
         sys.exit('Source image not found, path: ' + image_path) 
     
-    #image = np.copy(original_image)
     #height = 1000
     #width = round(height/image.shape[0]*image.shape[1])
-    #return cv.resize(image, (width, height))
-    #cv.imshow('image', image)
+    #resized_image = cv.resize(image, (width, height))
+    #cv.imshow('image', resized_image)
     #cv.waitKey(0)
     return image
 
@@ -40,6 +39,12 @@ def loadEquations():
 def findPageCorners(source_image):
     _, image = cv.threshold(source_image, 127, 255, cv.THRESH_BINARY)
     image = cv.medianBlur(image, 5)
+
+    #image2 = image.copy()
+    #height = 1000
+    #width = round(height/image2.shape[0]*image2.shape[1])
+    #cv.imshow('image', cv.resize(image2, (width, height)))
+    #cv.waitKey(0)   
     
     contours, _ = cv.findContours(image, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE)
     max_cnt = max(contours, key = lambda x: cv.contourArea(x))
@@ -57,7 +62,7 @@ def findPageCorners(source_image):
     
     #print(corners[:, 0])
     #image2 = np.zeros_like(image, dtype = np.uint8)
-    #image2 = cv.drawContours(image2, corners, -1, (255, 255, 255), 20)
+    #image2 = cv.drawContours(image2, [corners], -1, (255, 255, 255), 20)
     #height = 1000
     #width = round(height/image2.shape[0]*image2.shape[1])
     #cv.imshow('image', cv.resize(image2, (width, height)))
@@ -90,10 +95,9 @@ def cropEquations(source_image):
     binary_image = cv.medianBlur(binary_image, 7)
     kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (5, 5))
     binary_image = cv.morphologyEx(binary_image, cv.MORPH_CLOSE, kernel, iterations = 2, borderType = cv.BORDER_REPLICATE)
-    #binary_image = cv.dilate(binary_image, kernel)
+    binary_image = cv.dilate(binary_image, kernel)
     #heightxd = 1000
     #widthxd = round(heightxd/binary_image.shape[0]*binary_image.shape[1])
-    #cv.imwrite('binary.png', binary_image)
     #cv.imshow('image', cv.resize(binary_image, (widthxd, heightxd)))
     #cv.waitKey(0)
 
@@ -112,7 +116,7 @@ def cropEquations(source_image):
         if is_found == False and before_state:
             equ_bottom = y + 25
             cropped_equations.append(binary_image[equ_top:equ_bottom].copy())
-            #cv.imwrite('cropped/' + str(y) + '.png', binary_image[equ_top:equ_bottom])
+            #cv.imwrite(str(y) + '.png', binary_image[equ_top:equ_bottom])
         before_state = is_found
     return cropped_equations
 
@@ -141,6 +145,10 @@ def recognizeChar(undef_char, templates):
             undef_char_cnt.remove(cnt)            
     if len(undef_char_cnt) < 1:
         return    
+    #cv.imshow('img', cv.drawContours(np.zeros((200, 150), dtype = np.uint8), undef_char_cnt, -1, (200, 200, 200), 1))
+    #cv.waitKey(0)
+    #cv.imshow('img', undef_char)
+    #cv.waitKey(0)
     
     x, y, _, height = cv.boundingRect(undef_char_cnt[0])
     cnt_area = cv.contourArea(undef_char_cnt[0])
@@ -178,7 +186,7 @@ def recognizeChar(undef_char, templates):
             char = chars[int(votes[np.argmin(votes[:, 1]), 0])]
             return char
         else:
-            epsilon = 0.015
+            epsilon = 0.018
             while True:
                 poly = cv.approxPolyDP(undef_char_cnt[0], epsilon*cv.arcLength(undef_char_cnt[0], True), True)
                 hull_ind = cv.convexHull(poly, returnPoints = False)
@@ -216,6 +224,8 @@ def recognizeChar(undef_char, templates):
             #        cv.circle(hull_image, tuple(poly[defect[0][0]][0]), 3, (15, 15, 255), 1)
             #        cv.circle(hull_image, tuple(poly[defect[0][1]][0]), 3, (255, 15, 15), 1)
             #        cv.circle(hull_image, tuple(poly[defect[0][2]][0]), 3, (15, 255, 15), 1)
+            #cv.imshow("img", hull_image)
+            #cv.waitKey(0)
                 
             canny = np.zeros_like(undef_char, dtype = np.uint8)
             canny = cv.Canny(undef_char, 50, 150, apertureSize = 3)
@@ -223,26 +233,22 @@ def recognizeChar(undef_char, templates):
             if lines is not None:
                 char = chars[1]
                 return char
-                for line in lines:
-                    rho, theta = line[0]
-                    a = np.cos(theta)
-                    b = np.sin(theta)
-                    x0 = a * rho
-                    y0 = b * rho
-                    x1 = int(x0 + 10000 * (-b))
-                    y1 = int(y0 + 10000 * (a))
-                    x2 = int(x0 - 10000 * (-b))
-                    y2 = int(y0 - 10000 * (a))
-                    cv.line(canny, (x1, y1), (x2, y2), (200, 200, 200), 1)
+            #    for line in lines:
+            #        rho, theta = line[0]
+            #        a = np.cos(theta)
+            #        b = np.sin(theta)
+            #        x0 = a * rho
+            #        y0 = b * rho
+            #        x1 = int(x0 + 10000 * (-b))
+            #        y1 = int(y0 + 10000 * (a))
+            #        x2 = int(x0 - 10000 * (-b))
+            #        y2 = int(y0 - 10000 * (a))
+            #        cv.line(canny, (x1, y1), (x2, y2), (200, 200, 200), 1)
             else:
                 char = chars[3]
                 return char
-            cv.imshow("img", canny)
-            cv.waitKey(0)
-    #cv.imshow('img', cv.drawContours(np.zeros((200, 150), dtype = np.uint8), undef_char_cnt, -1, (200, 200, 200), 1))
-    #cv.waitKey(0)
-    #cv.imshow('img', undef_char)
-    #cv.waitKey(0)
+            #cv.imshow("img", canny)
+            #cv.waitKey(0)
     return char
 
 def recognizeEquation(cropped_equation, templates):
@@ -257,15 +263,24 @@ def recognizeEquation(cropped_equation, templates):
         if char == 'm' or char is None:
             continue
         equation_string.append(char)
+        #image = equation.copy()
+        #image = cv.line(image, (left, 0), (left, 200), (100, 200, 100), 5)
+        #image = cv.line(image, (left+width, 0), (left+width, 200), (100, 200, 100), 5)
+        #image = cv.applyColorMap(image, cv.COLORMAP_BONE)
+        #widthxd = 1000
+        #heightxd = round(widthxd/image.shape[1]*image.shape[0])
+        #image = cv.resize(image, (widthxd, heightxd))
+        #cv.imshow('image', image)
+        #cv.waitKey(0)
         cv.rectangle(equation, (left, 0), (left+width, 200), (0, 0, 0), -1)
 
     return equation_string
 
-#Gimage = loadImage('equations/1.jpg')
-#Gcorners = findPageCorners(Gimage)
-#Gfixed_image = fixPerspective(Gimage, Gcorners)
-#Gequations = cropEquations(Gfixed_image)
-Gequations = loadEquations()
+Gimage = loadImage('equations/a1.jpg')
+Gcorners = findPageCorners(Gimage)
+Gfixed_image = fixPerspective(Gimage, Gcorners)
+Gequations = cropEquations(Gfixed_image)
+#Gequations = loadEquations()
 Gtemplates = loadTemplates()
 for equation in Gequations:
     char_list = recognizeEquation(equation, Gtemplates)
