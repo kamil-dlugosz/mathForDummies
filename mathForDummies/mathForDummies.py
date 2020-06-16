@@ -134,7 +134,7 @@ def contourCenter(contour):
     return (x//n, y//n)
 
 def recognizeChar(undef_char, templates):
-    chars = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '-', '*', ':', ',', '=', '(', '[']
+    chars = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '-', '*', '/', '.', '=']
     undef_char_cnt, _ = cv.findContours(undef_char, cv.RETR_TREE, cv.CHAIN_APPROX_NONE)
     for cnt in undef_char_cnt:
         if cv.contourArea(cnt) < 100:
@@ -261,12 +261,21 @@ def recognizeEquation(cropped_equation, templates):
 
     return equation_string
 
-Gimage = loadImage('equations/1.jpg')
-Gcorners = findPageCorners(Gimage)
-Gfixed_image = fixPerspective(Gimage, Gcorners)
-Gequations = cropEquations(Gfixed_image)
-#Gequations = loadEquations()
+#Gimage = loadImage('equations/1.jpg')
+#Gcorners = findPageCorners(Gimage)
+#Gfixed_image = fixPerspective(Gimage, Gcorners)
+#Gequations = cropEquations(Gfixed_image)
+Gequations = loadEquations()
 Gtemplates = loadTemplates()
 for equation in Gequations:
     char_list = recognizeEquation(equation, Gtemplates)
     print(char_list)
+    string = ''
+    for char in char_list:
+        if char == '=':
+            continue
+        string = string + char
+    print(string, "\nDo you accept equation? y - yes, other - no")
+    agreement = input()
+    if agreement == 'y':
+        print(eval(string))
