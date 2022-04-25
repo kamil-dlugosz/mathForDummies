@@ -1,5 +1,5 @@
 # mathForDummies
-Image recognition - solving simple equations
+Image recognition - solving simple math expressions
 
 There are two verions of code:
 - mathForDummies-stepByStep: showing results of processing each image, then showing results
